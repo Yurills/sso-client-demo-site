@@ -55,8 +55,8 @@ const Callback = () => {
         throw new Error('Code verifier not found in cookies');
       }
 
-      // Make actual API request to localhost:8080/token
-      const tokenResponse = await fetch('http://localhost:8080/token', {
+      // Make API request using proxy to avoid CORS issues
+      const tokenResponse = await fetch('/api/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
