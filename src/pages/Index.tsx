@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Shield, ExternalLink, Settings } from "lucide-react";
+import { Shield, ExternalLink, Settings, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { isLoggedIn, userInfo, logout } = useAuth();
   const [ssoConfig, setSsoConfig] = useState({
     ssoPortalUrl: "https://your-sso-portal.com",
     clientId: "demo-client-123",
@@ -18,6 +19,9 @@ const Index = () => {
   const [showConfig, setShowConfig] = useState(false);
 
   const handleSSOLogin = () => {
+    // Store config in localStorage for the callback page
+    localStorage.setItem('ssoConfig', JSON.stringify(ssoConfig));
+    
     const params = new URLSearchParams({
       response_type: "code",
       client_id: ssoConfig.clientId,
@@ -36,6 +40,11 @@ const Index = () => {
     alert(`Demo: Would redirect to:\n${ssoUrl}`);
   };
 
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('ssoConfig');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
@@ -45,48 +54,96 @@ const Index = () => {
             <Shield className="h-6 w-6 text-blue-600" />
             <h1 className="text-xl font-semibold text-gray-900">SSO Demo Client</h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowConfig(!showConfig)}
-            className="gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Config
-          </Button>
+          {!isLoggedIn && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfig(!showConfig)}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Config
+            </Button>
+          )}
+          {isLoggedIn && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-md mx-auto space-y-6">
-          {/* Main Login Card */}
+          {/* Main Card */}
           <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-blue-600" />
+              <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+                isLoggedIn ? 'bg-green-100' : 'bg-blue-100'
+              }`}>
+                {isLoggedIn ? (
+                  <User className="h-6 w-6 text-green-600" />
+                ) : (
+                  <Shield className="h-6 w-6 text-blue-600" />
+                )}
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Welcome Back</CardTitle>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                {isLoggedIn ? 'Welcome Back!' : 'Welcome'}
+              </CardTitle>
               <CardDescription className="text-gray-600">
-                Sign in securely using Single Sign-On
+                {isLoggedIn 
+                  ? 'You are successfully authenticated'
+                  : 'Sign in securely using Single Sign-On'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                onClick={handleSSOLogin}
-                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Login with SSO
-              </Button>
-              
-              <div className="text-center text-sm text-gray-500">
-                Secure authentication powered by OAuth 2.0
-              </div>
+              {!isLoggedIn ? (
+                <>
+                  <Button 
+                    onClick={handleSSOLogin}
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Login with SSO
+                  </Button>
+                  
+                  <div className="text-center text-sm text-gray-500">
+                    Secure authentication powered by OAuth 2.0
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <h3 className="font-medium text-green-900 mb-2">User Information</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Name:</span>
+                        <span className="text-green-900 font-mono">{userInfo?.user?.name || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Email:</span>
+                        <span className="text-green-900 font-mono">{userInfo?.user?.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Token Type:</span>
+                        <span className="text-green-900 font-mono">{userInfo?.token_type || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Configuration Panel */}
-          {showConfig && (
+          {/* Configuration Panel - only show when not logged in */}
+          {!isLoggedIn && showConfig && (
             <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-lg">SSO Configuration</CardTitle>
@@ -142,8 +199,10 @@ const Index = () => {
           <Card className="border-blue-200 bg-blue-50/50">
             <CardContent className="pt-6">
               <div className="text-sm text-blue-800">
-                <strong>Demo Mode:</strong> This client will generate OAuth URLs and log them to the console. 
-                In production, users would be redirected to your SSO portal for authentication.
+                <strong>Demo Mode:</strong> {isLoggedIn 
+                  ? 'You are now logged in. The access token exchange was simulated successfully.'
+                  : 'This client will generate OAuth URLs and log them to the console. In production, users would be redirected to your SSO portal for authentication.'
+                }
               </div>
             </CardContent>
           </Card>

@@ -2,15 +2,15 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Home, Copy } from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle, XCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Callback = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [authData, setAuthData] = useState<any>(null);
-  const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+  const { login } = useAuth();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Processing OAuth callback...');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -21,40 +21,70 @@ const Callback = () => {
     console.log("OAuth callback received:", { code, error, state, fullUrl: window.location.href });
 
     if (error) {
-      setIsSuccess(false);
-      setAuthData({ error, error_description: urlParams.get('error_description') });
-    } else if (code) {
-      setIsSuccess(true);
-      setAuthData({
-        code,
-        state,
-        message: "Authorization code received successfully!"
-      });
-    } else {
-      setIsSuccess(false);
-      setAuthData({ error: "No authorization code or error received" });
+      setStatus('error');
+      setMessage(`Authentication failed: ${error}`);
+      setTimeout(() => navigate('/'), 3000);
+      return;
     }
-  }, [location]);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+    if (!code) {
+      setStatus('error');
+      setMessage('No authorization code received');
+      setTimeout(() => navigate('/'), 3000);
+      return;
+    }
+
+    // Exchange authorization code for access token
+    exchangeCodeForToken(code, state);
+  }, [location, navigate, login]);
+
+  const exchangeCodeForToken = async (code: string, state: string | null) => {
+    try {
+      setMessage('Exchanging authorization code for access token...');
+      
+      // Get SSO config from localStorage (set by the main page)
+      const ssoConfig = JSON.parse(localStorage.getItem('ssoConfig') || '{}');
+      
+      // In a real implementation, this would be a POST request to your SSO portal's token endpoint
+      // For demo purposes, we'll simulate the token exchange
+      console.log('Exchanging code for token:', {
+        code,
+        client_id: ssoConfig.clientId,
+        redirect_uri: ssoConfig.redirectUri,
+        grant_type: 'authorization_code'
+      });
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Simulate successful token response
+      const mockUserInfo = {
+        access_token: 'mock_access_token_' + Math.random().toString(36).substring(7),
+        token_type: 'Bearer',
+        expires_in: 3600,
+        user: {
+          id: '12345',
+          email: 'user@example.com',
+          name: 'Demo User'
+        }
+      };
+
+      // Store user info and mark as logged in
+      login(mockUserInfo);
+      
+      setStatus('success');
+      setMessage('Successfully authenticated! Redirecting to home...');
+      
+      // Redirect to home after 2 seconds
+      setTimeout(() => navigate('/'), 2000);
+      
+    } catch (error) {
+      console.error('Token exchange failed:', error);
+      setStatus('error');
+      setMessage('Failed to exchange authorization code for access token');
+      setTimeout(() => navigate('/'), 3000);
+    }
   };
-
-  const goHome = () => {
-    navigate('/');
-  };
-
-  if (isSuccess === null) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Processing OAuth callback...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -63,63 +93,30 @@ const Callback = () => {
           <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-center pb-4">
               <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
-                isSuccess ? 'bg-green-100' : 'bg-red-100'
+                status === 'loading' ? 'bg-blue-100' :
+                status === 'success' ? 'bg-green-100' : 'bg-red-100'
               }`}>
-                {isSuccess ? (
+                {status === 'loading' && (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                )}
+                {status === 'success' && (
                   <CheckCircle className="h-6 w-6 text-green-600" />
-                ) : (
+                )}
+                {status === 'error' && (
                   <XCircle className="h-6 w-6 text-red-600" />
                 )}
               </div>
               <CardTitle className={`text-2xl font-bold ${
-                isSuccess ? 'text-green-900' : 'text-red-900'
+                status === 'loading' ? 'text-blue-900' :
+                status === 'success' ? 'text-green-900' : 'text-red-900'
               }`}>
-                {isSuccess ? 'Authentication Successful' : 'Authentication Failed'}
+                {status === 'loading' ? 'Authenticating...' :
+                 status === 'success' ? 'Authentication Successful' : 'Authentication Failed'}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                {isSuccess 
-                  ? 'OAuth flow completed successfully'
-                  : 'There was an issue with the authentication process'
-                }
+                {message}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Auth Data Display */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <h3 className="font-medium text-gray-900">Response Details:</h3>
-                {Object.entries(authData || {}).map(([key, value]) => (
-                  <div key={key} className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-gray-600 capitalize">
-                      {key.replace('_', ' ')}:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-900 font-mono bg-white px-2 py-1 rounded text-xs max-w-32 truncate">
-                        {String(value)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(String(value))}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {isSuccess && (
-                <div className="text-sm text-green-700 bg-green-50 p-3 rounded-lg">
-                  <strong>Next Steps:</strong> In a real application, you would now exchange this authorization code for an access token using your backend server.
-                </div>
-              )}
-
-              <Button onClick={goHome} className="w-full gap-2">
-                <Home className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </CardContent>
           </Card>
         </div>
       </div>
