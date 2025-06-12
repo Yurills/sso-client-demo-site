@@ -45,32 +45,48 @@ const Callback = () => {
       // Get SSO config from localStorage (set by the main page)
       const ssoConfig = JSON.parse(localStorage.getItem('ssoConfig') || '{}');
       
-      // In a real implementation, this would be a POST request to your SSO portal's token endpoint
-      // For demo purposes, we'll simulate the token exchange
-      console.log('Exchanging code for token:', {
-        code,
-        client_id: ssoConfig.clientId,
-        redirect_uri: ssoConfig.redirectUri,
-        grant_type: 'authorization_code'
+      // Get code verifier from cookie
+      const codeVerifier = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('code_verifier='))
+        ?.split('=')[1];
+
+      if (!codeVerifier) {
+        throw new Error('Code verifier not found in cookies');
+      }
+
+      // Make actual API request to localhost:8080/token
+      const tokenResponse = await fetch('http://localhost:8080/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          client_id: ssoConfig.clientId,
+          redirect_uri: ssoConfig.redirectUri,
+          code_verifier: codeVerifier
+        }).toString()
       });
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!tokenResponse.ok) {
+        throw new Error(`Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
+      }
 
-      // Simulate successful token response
-      const mockUserInfo = {
-        access_token: 'mock_access_token_' + Math.random().toString(36).substring(7),
-        token_type: 'Bearer',
-        expires_in: 3600,
-        user: {
-          id: '12345',
-          email: 'user@example.com',
-          name: 'Demo User'
-        }
-      };
+      const tokenData = await tokenResponse.json();
+      console.log('Token exchange successful:', tokenData);
+
+      // Store JWT token in browser cookie (expires in 1 hour)
+      const expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + 1);
+      document.cookie = `jwt_token=${tokenData.access_token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Strict`;
+
+      // Clean up code verifier cookie
+      document.cookie = 'code_verifier=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 
       // Store user info and mark as logged in
-      login(mockUserInfo);
+      login(tokenData);
       
       setStatus('success');
       setMessage('Successfully authenticated! Redirecting to home...');
@@ -81,7 +97,7 @@ const Callback = () => {
     } catch (error) {
       console.error('Token exchange failed:', error);
       setStatus('error');
-      setMessage('Failed to exchange authorization code for access token');
+      setMessage(`Failed to exchange authorization code: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setTimeout(() => navigate('/'), 3000);
     }
   };
