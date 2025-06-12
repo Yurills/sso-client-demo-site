@@ -10,15 +10,38 @@ import { useAuth } from "@/contexts/AuthContext";
 const Index = () => {
   const { isLoggedIn, userInfo, logout } = useAuth();
   const [ssoConfig, setSsoConfig] = useState({
-    ssoPortalUrl: "https://your-sso-portal.com",
-    clientId: "demo-client-123",
+    ssoPortalUrl: "http://localhost:8080",
+    clientId: "web-app-prod-client",
     redirectUri: `${window.location.origin}/callback`,
     scope: "openid profile email"
   });
 
+
   const [showConfig, setShowConfig] = useState(false);
 
-  const handleSSOLogin = () => {
+  const generateCodeChallenge = (codeVerifier: string) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    return crypto.subtle.digest("SHA-256", data).then((hash) => {
+      const base64Url = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+      return base64Url;
+    });
+  }
+
+
+
+ //store code verifier in cookie
+  const generateCodeVerifier = () => {
+    const codeVerifier = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`; // Store for 1 hour
+    return codeVerifier;
+  }
+
+  const handleSSOLogin = async () => {
+    const codeVerifier = generateCodeVerifier();
     // Store config in localStorage for the callback page
     localStorage.setItem('ssoConfig', JSON.stringify(ssoConfig));
     
@@ -27,17 +50,19 @@ const Index = () => {
       client_id: ssoConfig.clientId,
       redirect_uri: ssoConfig.redirectUri,
       scope: ssoConfig.scope,
-      state: Math.random().toString(36).substring(7) // Simple state for demo
+      state: Math.random().toString(36).substring(7), // Simple state for demo
+      code_challenge: await generateCodeChallenge(codeVerifier),
+      code_challenge_method: "S256"
     });
 
-    const ssoUrl = `${ssoConfig.ssoPortalUrl}/oauth/authorize?${params.toString()}`;
+    const ssoUrl = `${ssoConfig.ssoPortalUrl}/sso/authorize?${params.toString()}`;
     console.log("Redirecting to SSO portal:", ssoUrl);
     
     // In a real implementation, you would redirect here
-    // window.location.href = ssoUrl;
+    window.location.href = ssoUrl;
     
     // For demo purposes, we'll just log the URL
-    alert(`Demo: Would redirect to:\n${ssoUrl}`);
+    // alert(`Demo: Would redirect to:\n${ssoUrl}`);
   };
 
   const handleLogout = () => {
