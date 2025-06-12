@@ -36,7 +36,7 @@ const Callback = () => {
 
     // Exchange authorization code for access token
     exchangeCodeForToken(code, state);
-  }, [location, navigate, login]);
+  }, [location]);
 
   const exchangeCodeForToken = async (code: string, state: string | null) => {
     try {
@@ -56,7 +56,7 @@ const Callback = () => {
       }
 
       // Make API request using proxy to avoid CORS issues
-      const tokenResponse = await fetch('/api/token', {
+      const tokenResponse = await fetch('http://localhost:8080/sso/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -65,12 +65,14 @@ const Callback = () => {
           grant_type: 'authorization_code',
           code: code,
           client_id: ssoConfig.clientId,
-          redirect_uri: ssoConfig.redirectUri,
+          // redirect_uri: ssoConfig.redirectUri,
           code_verifier: codeVerifier
         }).toString()
       });
+      console.log(code)
 
       if (!tokenResponse.ok) {
+        console.error('Token exchange failed:', tokenResponse.status, tokenResponse.statusText);
         throw new Error(`Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
       }
 
