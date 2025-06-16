@@ -38,8 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsLoggedIn(true);
           setUserInfo({
             user: {
-              name: decoded.name || decoded.preferred_username || 'User',
-              email: decoded.email || 'N/A'
+              name: decoded.sub || decoded.preferred_username || 'User',
+              email: decoded.email || 'N/A',
+              
             },
             token_type: 'Bearer',
             access_token: jwtToken
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Clear JWT token from cookies
     document.cookie = 'jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     console.log('User logged out, JWT token cleared');
+    window.location.href = '/'; // Redirect to home page
   };
 
   return (

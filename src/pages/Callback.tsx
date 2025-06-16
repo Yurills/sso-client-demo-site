@@ -56,7 +56,7 @@ const Callback = () => {
       }
 
       // Make API request using proxy to avoid CORS issues
-      const tokenResponse = await fetch('http://localhost:8080/sso/token', {
+      const tokenResponse = await fetch('http://localhost:8080/api/sso/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -94,13 +94,13 @@ const Callback = () => {
       setMessage('Successfully authenticated! Redirecting to home...');
       
       // Redirect to home after 2 seconds
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => window.location.href = '/', 2000);
       
     } catch (error) {
       console.error('Token exchange failed:', error);
       setStatus('error');
       setMessage(`Failed to exchange authorization code: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => window.location.href = '/', 3000);
     }
   };
 

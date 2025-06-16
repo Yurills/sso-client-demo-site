@@ -52,10 +52,11 @@ const Index = () => {
       scope: ssoConfig.scope,
       state: Math.random().toString(36).substring(7), // Simple state for demo
       code_challenge: await generateCodeChallenge(codeVerifier),
-      code_challenge_method: "S256"
+      code_challenge_method: "S256",
+      nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) // Random nonce for demo
     });
 
-    const ssoUrl = `${ssoConfig.ssoPortalUrl}/sso/authorize?${params.toString()}`;
+    const ssoUrl = `${ssoConfig.ssoPortalUrl}/api/sso/authorize?${params.toString()}`;
     console.log("Redirecting to SSO portal:", ssoUrl);
     
     // In a real implementation, you would redirect here
