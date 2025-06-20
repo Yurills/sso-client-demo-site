@@ -16,7 +16,6 @@ const Index = () => {
     scope: "openid profile email"
   });
 
-
   const [showConfig, setShowConfig] = useState(false);
 
   const generateCodeChallenge = (codeVerifier: string) => {
@@ -69,6 +68,10 @@ const Index = () => {
   const handleLogout = () => {
     logout();
     localStorage.removeItem('ssoConfig');
+  };
+
+  const handlePushAuthRequest = () => {
+    window.location.href = 'http://localhost:8082/sso';
   };
 
   return (
@@ -163,6 +166,14 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  <Button 
+                    onClick={handlePushAuthRequest}
+                    className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Push Authorization Request
+                  </Button>
                 </div>
               )}
             </CardContent>
