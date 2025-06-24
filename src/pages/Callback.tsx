@@ -66,7 +66,8 @@ const Callback = () => {
           code: code,
           client_id: ssoConfig.clientId,
           // redirect_uri: ssoConfig.redirectUri,
-          code_verifier: codeVerifier
+          code_verifier: codeVerifier,
+          nonce: Math.random().toString(36).substring(2, 15), // Generate a random nonce
         }).toString()
       });
       console.log(code)
@@ -82,7 +83,7 @@ const Callback = () => {
       // Store JWT token in browser cookie (expires in 1 hour)
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1);
-      document.cookie = `jwt_token=${tokenData.access_token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Strict`;
+      document.cookie = `jwt_token=${tokenData.access_token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Strict `;
 
       // Clean up code verifier cookie
       document.cookie = 'code_verifier=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';

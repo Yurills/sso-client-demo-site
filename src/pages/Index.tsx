@@ -70,9 +70,27 @@ const Index = () => {
     localStorage.removeItem('ssoConfig');
   };
 
-  const handlePushAuthRequest = () => {
-    window.location.href = 'http://localhost:8082/sso';
-  };
+  const handlePushAuthRequest = async () => {
+    const requesttoken = await fetch('http://localhost:8080/api/sso/par/request.token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userInfo?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          client_id: ssoConfig.clientId,
+          source: 'Production Web App',
+          destination: 'Client Clone',
+          destination_link: 'http://localhost:8082/profile'
+        })
+      });
+
+      //redirect to request token URL
+      const requestTokenUrl = await requesttoken.json();
+      const requestTokenLink = requestTokenUrl.destination_link;
+      console.log("Redirecting to request token URL:", requestTokenLink);
+      window.location.href = requestTokenLink;
+    }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
