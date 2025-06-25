@@ -26,17 +26,50 @@ const SSO = () => {
     handlePushAuthRequest(ssoToken);
   }, [location]);
 
+  const generateCodeVerifier = () => {
+    const codeVerifier = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`; // Store for 1 hour
+    return codeVerifier;
+  }
+  const generateCodeChallenge = (codeVerifier: string) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    return crypto.subtle.digest("SHA-256", data).then((hash) => {
+      const base64Url = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+      return base64Url;
+    });
+  }
+
+
+
+
+
+
   const handlePushAuthRequest = async (ssoToken: string) => {
     try {
+      const codeVerifier = generateCodeVerifier();
+      document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`; // Store for 1 hour
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
       console.log('Step 1: Calling /api/sso/par with sso_token');
       setMessage('Step 1: Processing push authorization request...');
       
       // Step 1: Call /api/sso/par with sso_token
-      const parResponse = await fetch(`/api/sso/par?sso_token=${ssoToken}`, {
-        method: 'GET',
+      const parResponse = await fetch(`http://localhost:8080/api/sso/par`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+          client_id: 'web-app-prod-client',
+          sso_token: ssoToken,
+          state: Math.random().toString(36).substring(7),
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256',
+          redirect_uri: `${window.location.origin}/callback`
+        })
       });
 
       if (!parResponse.ok) {
@@ -55,7 +88,7 @@ const SSO = () => {
       setMessage('Step 2: Authorizing request...');
 
       // Step 2: Redirect to /api/sso/par/authorized with request_uri as body
-      const authorizeResponse = await fetch('/api/sso/par/authorized', {
+      const authorizeResponse = await fetch('http://localhost:8080/api/sso/par/authorize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,6 +108,10 @@ const SSO = () => {
 
       setStatus('success');
       setMessage('Push authorization completed successfully! Redirecting...');
+      
+      //exchange code for token
+
+      navigate(`/callback?code=${authorizeData.code}&state=${parData.state}`);
       
       // Redirect to home after 2 seconds
       setTimeout(() => navigate('/'), 2000);
