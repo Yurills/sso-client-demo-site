@@ -34,6 +34,20 @@ const Callback = () => {
       return;
     }
 
+    if (!state) {
+      setStatus('error');
+      setMessage('No state parameter received');
+      setTimeout(() => navigate('/'), 3000);
+      return;
+    }
+
+    if (state !== document.cookie.split('; ').find(row => row.startsWith('state=')).split('=')[1]) {
+      setStatus('error');
+      setMessage('Invalid state parameter');
+      setTimeout(() => navigate('/'), 3000);
+      return;
+    }
+
     // Exchange authorization code for access token
     exchangeCodeForToken(code, state);
   }, [location]);

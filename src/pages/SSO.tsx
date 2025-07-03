@@ -80,7 +80,17 @@ const SSO = () => {
       const parData = await parResponse.json();
       console.log('PAR response received:', parData);
 
-      if (!parData.request_uri) {
+      //if receive authCode, redirect to /callback instead
+      if (parData.authCode) {
+        console.log('Received authCode, redirecting to /callback');
+        setStatus('success');
+        setMessage('Push authorization completed successfully! Redirecting...');
+        navigate(`/callback?code=${parData.authCode}&state=${parData.state}`);
+        return;
+      }
+
+
+      if (!parData.request_uri && !parData.authCode) {
         throw new Error('No request_uri received from PAR endpoint');
       }
 

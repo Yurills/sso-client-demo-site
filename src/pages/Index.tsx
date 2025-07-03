@@ -43,13 +43,16 @@ const Index = () => {
     const codeVerifier = generateCodeVerifier();
     // Store config in localStorage for the callback page
     localStorage.setItem('ssoConfig', JSON.stringify(ssoConfig));
-    
+    const state = Math.random().toString(36).substring(7); // Simple state for demo
+    document.cookie = `state=${state}; path=/; max-age=3600`; // Store for 1 hour
+
+
     const params = new URLSearchParams({
       response_type: "code",
       client_id: ssoConfig.clientId,
       redirect_uri: ssoConfig.redirectUri,
       scope: ssoConfig.scope,
-      state: Math.random().toString(36).substring(7), // Simple state for demo
+      state: state,
       code_challenge: await generateCodeChallenge(codeVerifier),
       code_challenge_method: "S256",
       nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) // Random nonce for demo
@@ -79,9 +82,9 @@ const Index = () => {
         },
         body: JSON.stringify({
           client_id: ssoConfig.clientId,
-          source: 'Production Web App',
-          destination: 'Client Clone',
-          destination_link: 'http://localhost:8082/profile'
+          source: 'http://localhost:8081',
+          destination: 'myapp://',
+          destination_link: 'myapp://'
         })
       });
 
@@ -190,7 +193,7 @@ const Index = () => {
                     className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    Push Authorization Request
+                    Open App
                   </Button>
                 </div>
               )}
