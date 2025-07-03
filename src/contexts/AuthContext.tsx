@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AuthContextType {
@@ -11,8 +10,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+  // Initialize with a default logged-in user for testing
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [userInfo, setUserInfo] = useState({
+    user: {
+      name: 'Test User',
+      email: 'test@example.com'
+    },
+    token_type: 'Bearer',
+    access_token: 'test-token-123'
+  });
 
   // Check for existing JWT token in cookies on app load
   useEffect(() => {
