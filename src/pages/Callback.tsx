@@ -17,8 +17,10 @@ const Callback = () => {
     const code = urlParams.get('code');
     const error = urlParams.get('error');
     const state = urlParams.get('state');
+    const token = urlParams.get('token');
+    const par = urlParams.get('par');
 
-    console.log("OAuth callback received:", { code, error, state, fullUrl: window.location.href });
+    console.log("OAuth callback received:", { code, error, state, token, fullUrl: window.location.href });
 
     if (error) {
       setStatus('error');
@@ -27,9 +29,10 @@ const Callback = () => {
       return;
     }
 
-    if (!code) {
+    if (!code && !token) {
       setStatus('error');
-      setMessage('No authorization code received');
+      setMessage('No authorization code or token received');
+
       setTimeout(() => navigate('/'), 3000);
       return;
     }
@@ -41,18 +44,26 @@ const Callback = () => {
       return;
     }
 
-    if (state !== document.cookie.split('; ').find(row => row.startsWith('state=')).split('=')[1]) {
+    if (!par && code && state !== document.cookie.split('; ').find(row => row.startsWith('state=')).split('=')[1]) {
       setStatus('error');
-      setMessage('Invalid state parameter');
-      setTimeout(() => navigate('/'), 3000);
+      setMessage(`Invalid state parameter: code=${code}, state=${state}, cookie=${document.cookie}`);
+      setTimeout(() => navigate('/'), 30000);
       return;
     }
 
     // Exchange authorization code for access token
-    exchangeCodeForToken(code, state);
+    if (code && state) {
+      setStatus('loading');
+      exchangeCodeForToken('authorization_code', code, state);
+    }
+    // If we received a token directly (e.g. from push auth), handle it
+    else if (token) {
+      setStatus('loading');
+      exchangeCodeForToken('refresh_token', token, state);
+    }
   }, [location]);
 
-  const exchangeCodeForToken = async (code: string, state: string | null) => {
+  const exchangeCodeForToken = async (type: string, code: string, state: string | null) => {
     try {
       setMessage('Exchanging authorization code for access token...');
       
@@ -70,13 +81,13 @@ const Callback = () => {
       }
 
       // Make API request using proxy to avoid CORS issues
-      const tokenResponse = await fetch('http://localhost:8080/api/sso/token', {
+      const tokenResponse = await fetch('https://localhost:8080/api/sso/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          grant_type: 'authorization_code',
+          grant_type: type,
           code: code,
           client_id: ssoConfig.clientId,
           // redirect_uri: ssoConfig.redirectUri,

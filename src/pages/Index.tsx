@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const Index = () => {
   const { isLoggedIn, userInfo, logout } = useAuth();
   const [ssoConfig, setSsoConfig] = useState({
-    ssoPortalUrl: "http://localhost:8080",
+    ssoPortalUrl: "https://localhost:8080",
     clientId: "web-app-prod-client",
     redirectUri: `${window.location.origin}/callback`,
     scope: "openid profile email"
@@ -74,7 +74,7 @@ const Index = () => {
   };
 
   const handlePushAuthRequest = async () => {
-    const requesttoken = await fetch('http://localhost:8080/api/sso/par/request.token', {
+    const requesttoken = await fetch('https://localhost:8080/api/sso/par/request.token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

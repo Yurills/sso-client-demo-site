@@ -57,8 +57,9 @@ const SSO = () => {
       setMessage('Step 1: Processing push authorization request...');
       
       // Step 1: Call /api/sso/par with sso_token
-      const parResponse = await fetch(`http://localhost:8080/api/sso/par`, {
+      const parResponse = await fetch(`https://localhost:8080/api/sso/par`, {
         method: 'POST',
+        credentials: 'include', // Include cookies in the request
         headers: {
           'Content-Type': 'application/json',
         },
@@ -80,17 +81,17 @@ const SSO = () => {
       const parData = await parResponse.json();
       console.log('PAR response received:', parData);
 
-      //if receive authCode, redirect to /callback instead
-      if (parData.authCode) {
-        console.log('Received authCode, redirecting to /callback');
+      //if receive token, redirect to /callback instead
+      if (parData.token) {
+        console.log('Received refresh_token, redirecting to /callback');
         setStatus('success');
         setMessage('Push authorization completed successfully! Redirecting...');
-        navigate(`/callback?code=${parData.authCode}&state=${parData.state}`);
+        navigate(`/callback?token=${parData.token}&state=${parData.state}`);
         return;
       }
 
 
-      if (!parData.request_uri && !parData.authCode) {
+      if (!parData.request_uri && !parData.token) {
         throw new Error('No request_uri received from PAR endpoint');
       }
 
@@ -98,7 +99,7 @@ const SSO = () => {
       setMessage('Step 2: Authorizing request...');
 
       // Step 2: Redirect to /api/sso/par/authorized with request_uri as body
-      const authorizeResponse = await fetch('http://localhost:8080/api/sso/par/authorize', {
+      const authorizeResponse = await fetch('https://localhost:8080/api/sso/par/authorize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ const SSO = () => {
       
       //exchange code for token
 
-      navigate(`/callback?code=${authorizeData.code}&state=${parData.state}`);
+      navigate(`/callback?code=${authorizeData.code}&state=${parData.state}&par=true`);
       
       // Redirect to home after 2 seconds
       setTimeout(() => navigate('/'), 2000);
