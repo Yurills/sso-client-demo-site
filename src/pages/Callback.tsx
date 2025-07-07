@@ -11,6 +11,7 @@ const Callback = () => {
   const { login } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing OAuth callback...');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -19,6 +20,9 @@ const Callback = () => {
     const state = urlParams.get('state');
     const token = urlParams.get('token');
     const par = urlParams.get('par');
+
+
+  
 
     console.log("OAuth callback received:", { code, error, state, token, fullUrl: window.location.href });
 

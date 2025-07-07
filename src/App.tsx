@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Callback from "./pages/Callback";
 import SSO from "./pages/SSO";
 import NotFound from "./pages/NotFound";
+import SessionPrompt from "./pages/SessionPrompt";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/sso" element={<SSO />} />
+            <Route path="/session-prompt" element={<SessionPrompt />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
