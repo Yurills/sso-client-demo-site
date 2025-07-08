@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, ExternalLink, Settings, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import AccountSelectionDialog from "@/components/AccountSelectionDialog";
-import LocalLoginForm from "@/components/LocalLoginForm";
 
 const Index = () => {
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const navigate = useNavigate();
   const [ssoConfig, setSsoConfig] = useState({
     ssoPortalUrl: "https://localhost:8080",
     clientId: "web-app-prod-client",
@@ -19,7 +20,6 @@ const Index = () => {
 
   const [showConfig, setShowConfig] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
-  const [showLocalLogin, setShowLocalLogin] = useState(false);
 
   const generateCodeChallenge = (codeVerifier: string) => {
     const encoder = new TextEncoder();
@@ -103,13 +103,9 @@ const Index = () => {
     window.location.href = ssoUrl;
   };
 
-  if (showLocalLogin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <LocalLoginForm onCancel={() => setShowLocalLogin(false)} />
-      </div>
-    );
-  }
+  const handleLocalLogin = () => {
+    navigate("/local-login");
+  };
 
   return (
     <>
@@ -182,7 +178,7 @@ const Index = () => {
                     </Button>
                     
                     <Button 
-                      onClick={() => setShowLocalLogin(true)}
+                      onClick={handleLocalLogin}
                       variant="outline"
                       className="w-full h-12 font-medium transition-all duration-200 hover:shadow-lg gap-2"
                     >

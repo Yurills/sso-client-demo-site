@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Callback from "./pages/Callback";
 import SSO from "./pages/SSO";
+import LocalLogin from "./pages/LocalLogin";
 import NotFound from "./pages/NotFound";
 import SessionPrompt from "./pages/SessionPrompt";
 
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/sso" element={<SSO />} />
+            <Route path="/local-login" element={<LocalLogin />} />
             <Route path="/session-prompt" element={<SessionPrompt />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
