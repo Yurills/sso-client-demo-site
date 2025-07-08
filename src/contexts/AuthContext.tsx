@@ -1,3 +1,4 @@
+import { set } from 'date-fns';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AuthContextType {
@@ -23,7 +24,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for existing JWT token in cookies on app load
   useEffect(() => {
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
+      //check for JWT token in cookies
       const jwtToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('jwt_token='))
@@ -45,12 +47,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsLoggedIn(true);
           setUserInfo({
             user: {
-              name: decoded.sub || decoded.preferred_username || 'User',
+              name: decoded.preferred_username || decoded.sub || 'User',
               email: decoded.email || 'N/A',
               
             },
             token_type: 'Bearer',
-            access_token: jwtToken
+            access_token: jwtToken,
+            method: "jwt"
           });
         } catch (error) {
           console.error('Failed to decode JWT:', error);
@@ -58,6 +61,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           document.cookie = 'jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         }
       }
+
+      //2. check internal session
+      try {
+        const res = await fetch('/api/auth/session/status', {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setIsLoggedIn(true);
+          setUserInfo({
+            user: {
+              name: data.user.name || 'User',
+              email: data.user.email || 'N/A',
+            },
+            method: "internal"
+          });
+        } else {
+          console.log('No active session found, user is not logged in');
+          setIsLoggedIn(false);
+          setUserInfo(null); 
+        }
+
+      } catch (error) {
+        console.error('Error checking session status:', error);
+        setIsLoggedIn(false);
+        setUserInfo(null);
+      }
+
+
     };
 
     checkAuthStatus();
@@ -69,13 +101,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUserInfo(userInfo);
   };
 
-  const logout = () => {
+  const logout = async () => {
     setIsLoggedIn(false);
     setUserInfo(null);
     // Clear JWT token from cookies
     document.cookie = 'jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     console.log('User logged out, JWT token cleared');
-    window.location.href = '/'; // Redirect to home page
+     // Redirect to home page
+    // Optionally, you can also clear the session on the server
+    try {
+      await fetch('/api/auth/session/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error clearing session on server:', error);
+    }
+    window.location.href = '/';
+
   };
 
   return (

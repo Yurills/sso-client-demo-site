@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"nodemon backend/index.js\"",
     "build": "vite build",
+    "start": "node backend/index.js",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -44,6 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "concurrently": "^9.2.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "express": "^5.1.0",
@@ -52,6 +54,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "nodemon": "^3.1.10",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",

@@ -4,11 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { parseJwt } from "@/lib/jwt";
 
 const Callback = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, userInfo } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing OAuth callback...');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -123,8 +124,15 @@ const Callback = () => {
       setStatus('success');
       setMessage('Successfully authenticated! Redirecting to home...');
       
-      // Redirect to home after 2 seconds
-      setTimeout(() => window.location.href = '/', 2000);
+      //handle session switching
+      const currentUser = userInfo?.user;
+      const newUser = parseJwt(tokenData.access_token)?.user;
+      if (currentUser && newUser && currentUser.id != newUser.id){
+        //session conflict
+        localStorage.setItem('pending_oauth_user', JSON.stringify(tokenData));
+        navigate('/session-switch');
+        return;
+      }
       
     } catch (error) {
       console.error('Token exchange failed:', error);

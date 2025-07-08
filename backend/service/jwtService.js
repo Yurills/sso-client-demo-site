@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-exports.decodeJWT = (token) => {
+export const decodeJWT = (token) => {
     try { 
         return jwt.decode(token);
     } catch (error) {
@@ -8,3 +8,4 @@ exports.decodeJWT = (token) => {
         return null;
     }
 };
+

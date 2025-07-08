@@ -1,11 +1,13 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const authController = require('../controllers/authController');
+import authController from '../controllers/authController.js';
 
 router.get('/callback', authController.handleOAuthCallback);
-router.post('/switch-session', authController.switchToJwt);
-router.post('/stay-internal', authController.stayInternal);
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
+router.get('/session/status', authController.checkInternalSession);
 
-module.exports = router;
+router.post('/session/switch', authController.switchToJwt);
+router.post('/session/stay-internal', authController.stayInternal);
+router.post('/session/login', authController.login);
+router.post('/session/logout', authController.logout);
+
+export default router;

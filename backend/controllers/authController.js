@@ -1,13 +1,14 @@
-const path = require('path');
-const jwtService = require('../service/jwtService');
+import {decodeJWT} from '../service/jwtService.js';
+import path from 'path';
 
-exports.handleOAuthCallback = (req, res) => {
+
+export const handleOAuthCallback = (req, res) => {
     const token = req.query.token;
     if (!token) {
         return res.status(400).send('Token is required');
     }
 
-    const jwtUser = jwtService.decodeJWT(token);
+    const jwtUser = decodeJWT(token);
     if (!jwtUser) {
         return res.status(401).send('Invalid token');
     }
@@ -29,7 +30,7 @@ exports.handleOAuthCallback = (req, res) => {
     res.redirect("/auth/switch-session");
 }
 
-exports.switchToJwt = (req, res) => {
+export const switchToJwt = (req, res) => {
     const jwtUser = jwtService.decodeJWT(req.session.pendingJwt);
     if (!jwtUser) {
         return res.status(401).send('Invalid switch request');
@@ -39,7 +40,7 @@ exports.switchToJwt = (req, res) => {
     res.status(200).send(`Switched to user: ${jwtUser.username}`);
 }
 
-exports.stayInternal = (req, res) => {
+export const stayInternal = (req, res) => {
     const currentUser = req.session.userId;
     if (!currentUser) {
         return res.status(401).send('Unauthorized');
@@ -48,24 +49,26 @@ exports.stayInternal = (req, res) => {
     res.status(200).send(`Staying logged in as user: ${currentUser}`);
 }
 
-exports.login = (req, res) => {
+export const login = (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).send('Username and password are required');
     }
 
     // Simulate user authentication
-    const user = { id: 1, username: 'admin', password: 'admin123' }; // Replace with real user lookup
+    const user = { id: 1, username: 'admin', password: 'admin123', email: 'admin@example.com', name: 'Admin User' }; // Replace with real user lookup
 
     if (username === user.username && password === user.password) {
         req.session.userId = user.id;
+        req.session.email = user.email;
+        req.session.name = user.name || null; // Optional name field
         return res.status(200).send(`Logged in as ${user.username}`);
     } else {
         return res.status(401).send('Invalid credentials');
     }
 }
 
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).send('Could not log out');
@@ -73,3 +76,31 @@ exports.logout = (req, res) => {
         res.status(200).send('Logged out successfully');
     });
 }
+
+export const checkInternalSession = (req, res) => {
+    if (req.session.userId) {
+        res.status(200).json({
+            loggedIn: true,
+            user: {
+                id: req.session.userId,
+                email: req.session.email || null,
+                name: req.session.name || null
+            },
+            method: 'internal'
+        })
+    } else {
+        res.status(401).json({
+            loggedIn: false,})
+    }
+}
+
+const authController = {
+    handleOAuthCallback,
+    switchToJwt,
+    stayInternal,
+    login,
+    logout,
+    checkInternalSession
+};
+
+export default authController;
