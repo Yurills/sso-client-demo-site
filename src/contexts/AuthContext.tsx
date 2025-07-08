@@ -8,24 +8,27 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface UserInfo {
+  user: {
+    name: string;
+    email: string;
+  };
+  method: string; // "jwt" or "internal"
+  token_type: string; // e.g., "Bearer"
+  access_token: string; // JWT token if using JWT auth
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Initialize with a default logged-in user for testing
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [userInfo, setUserInfo] = useState({
-    user: {
-      name: 'Test User',
-      email: 'test@example.com'
-    },
-    token_type: 'Bearer',
-    access_token: 'test-token-123'
-  });
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // Check for existing JWT token in cookies on app load
   useEffect(() => {
     const checkAuthStatus = async () => {
-      //check for JWT token in cookies
+      //1. check for JWT token in cookies
       const jwtToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('jwt_token='))
@@ -55,6 +58,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             access_token: jwtToken,
             method: "jwt"
           });
+
+
+          console.log('User logged in with JWT:', decoded.preferred_username || decoded.sub || 'User');
+          return; // Exit if JWT is valid
         } catch (error) {
           console.error('Failed to decode JWT:', error);
           // If token is invalid, clear it
@@ -69,13 +76,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         if (res.ok) {
           const data = await res.json();
+          console.log('Internal session status:', data);
           setIsLoggedIn(true);
           setUserInfo({
             user: {
               name: data.user.name || 'User',
               email: data.user.email || 'N/A',
             },
-            method: "internal"
+            method: "internal",
+            token_type: 'Bearer',
+            access_token: '', // No JWT for internal session, so leave empty or set as needed
           });
         } else {
           console.log('No active session found, user is not logged in');
@@ -85,8 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       } catch (error) {
         console.error('Error checking session status:', error);
-        setIsLoggedIn(false);
-        setUserInfo(null);
+        // setIsLoggedIn(false);
+        // setUserInfo(null);
       }
 
 
@@ -98,6 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (userInfo: any) => {
     console.log('Login called with user info:', userInfo);
     setIsLoggedIn(true);
+    console.log('User logged in:', userInfo);
     setUserInfo(userInfo);
   };
 

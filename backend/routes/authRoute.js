@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import authController from '../controllers/authController.js';
 
-router.get('/callback', authController.handleOAuthCallback);
+router.get('/sso/callback', authController.handleOAuthCallback);
 router.get('/session/status', authController.checkInternalSession);
 
 router.post('/session/switch', authController.switchToJwt);

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseJwt } from "@/lib/jwt";
+import { parse } from "path";
 
 const Callback = () => {
   const location = useLocation();
@@ -49,7 +50,9 @@ const Callback = () => {
       return;
     }
 
-    if (!par && code && state !== document.cookie.split('; ').find(row => row.startsWith('state=')).split('=')[1]) {
+    const stateCookie = document.cookie.split('; ').find(row => row.startsWith('state='));
+    const stateCookieValue = stateCookie ? stateCookie.split('=')[1] : undefined;
+    if (!par && code && state !== stateCookieValue) {
       setStatus('error');
       setMessage(`Invalid state parameter: code=${code}, state=${state}, cookie=${document.cookie}`);
       setTimeout(() => navigate('/'), 30000);
@@ -118,22 +121,40 @@ const Callback = () => {
       // Clean up code verifier cookie
       document.cookie = 'code_verifier=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 
-      // Store user info and mark as logged in
-      login(tokenData);
+      //handle session switch if needed
+      const callbackRes = await fetch(`/api/auth/sso/callback?token=${tokenData.access_token}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       
-      setStatus('success');
-      setMessage('Successfully authenticated! Redirecting to home...');
-      
-      //handle session switching
-      const currentUser = userInfo?.user;
-      const newUser = parseJwt(tokenData.access_token)?.user;
-      if (currentUser && newUser && currentUser.id != newUser.id){
-        //session conflict
+      if (callbackRes.status === 409) {
+        console.log("session conflict")
         localStorage.setItem('pending_oauth_user', JSON.stringify(tokenData));
-        navigate('/session-switch');
+        navigate('/session-prompt');
         return;
       }
-      
+
+      if (!callbackRes.ok) {
+        throw new Error(`Callback processing failed: ${callbackRes.status} ${callbackRes.statusText}`);
+      }
+
+      //no conflict:
+      login({
+        user:{
+          name: parseJwt(tokenData.access_token)?.preferred_username || 'N/A',
+          email: parseJwt(tokenData.access_token)?.email || 'N/A',
+        },
+        token_type: 'Bearer',
+        access_token: tokenData.access_token,
+        method: 'jwt',
+      })
+
+      setStatus('success');
+      setMessage('Authentication successful! Redirecting to home page...');
+      setTimeout(() => {
+        // Redirect to home page after successful authentication
+        window.location.href = '/';
+      }, 2000);
     } catch (error) {
       console.error('Token exchange failed:', error);
       setStatus('error');

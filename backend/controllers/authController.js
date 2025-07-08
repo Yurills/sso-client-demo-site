@@ -1,5 +1,6 @@
 import {decodeJWT} from '../service/jwtService.js';
 import path from 'path';
+import { findUserByUsername } from '../models/userModel.js';
 
 
 export const handleOAuthCallback = (req, res) => {
@@ -16,28 +17,72 @@ export const handleOAuthCallback = (req, res) => {
     // Continue with the authenticated user
     const currentUser = req.session.userId;
 
+    //
     if (!currentUser) {
-        req.session.userId = jwtUser.id; // Assuming jwtUser has an id property
+        req.session.userId = jwtUser.sub; // Assuming jwtUser has an id property
+        req.session.email = jwtUser.email || null; // Optional email field
+        req.session.name = jwtUser.name || null; // Optional name field
+
+        return res.status(200).send({
+            conflict: false,
+            user: {
+                id: jwtUser.sub,
+                email: jwtUser.email || null, // Optional email field
+                name: jwtUser.name || jwtUser.preferred_username || null // Optional name field
+            }
+        });
+
     }
 
-    if (currentUser === jwtUser.id) {
-        return res.status(200).send(`Already logged in as, ${jwtUser.username}`);
+    if (currentUser === jwtUser.sub) {
+        return res.status(200).send({
+            conflict: false,
+            user: {
+                id: jwtUser.sub,
+                email: jwtUser.email || null, // Optional email field
+                name: jwtUser.name || jwtUser.preferred_username || null // Optional name field
+            }
+        });
     }
+
+
 
     //If conflict between current user and JWT user, prompt for session select.
-    res.status(409).send('Session conflict detected. Please select a session.');
+    // res.status(409).send('Session conflict detected. Please select a session.');
     req.session.pendingJwt = token;
-    res.redirect("/auth/switch-session");
+    return res.status(409).json({
+        conflict: true,
+        currentUser: {
+            id: currentUser,
+            email: req.session.email || null, // Optional email field
+            name: req.session.name || null // Optional name field
+        },
+        incomingUser: {
+            id: jwtUser.sub,
+            email: jwtUser.email || null, // Optional email field
+            name: jwtUser.name || jwtUser.preferred_username || null // Optional name field
+        }
+    })
 }
 
 export const switchToJwt = (req, res) => {
-    const jwtUser = jwtService.decodeJWT(req.session.pendingJwt);
+    const jwtUser = decodeJWT(req.session.pendingJwt);
     if (!jwtUser) {
         return res.status(401).send('Invalid switch request');
     }
     req.session.userId = jwtUser.sub;
+    req.session.email = jwtUser.email || null; // Optional email field
+    req.session.name = jwtUser.name || null; // Optional name field
     req.session.pendingJwt = null;
-    res.status(200).send(`Switched to user: ${jwtUser.username}`);
+    res.status(200).send({
+        success: true,
+        message: 'Switched to JWT session successfully',
+        user: {
+            id: jwtUser.sub,
+            email: jwtUser.email || null,
+            name: jwtUser.name || jwtUser.preferred_username || null
+        }
+    });
 }
 
 export const stayInternal = (req, res) => {
@@ -46,7 +91,15 @@ export const stayInternal = (req, res) => {
         return res.status(401).send('Unauthorized');
     }
     req.session.pendingJwt = null;
-    res.status(200).send(`Staying logged in as user: ${currentUser}`);
+    res.status(200).send({
+        success: true,
+        message: `Staying logged in as user: ${currentUser}`,
+        user: {
+            id: currentUser,
+            email: req.session.email || null, // Optional email field
+            name: req.session.name || null // Optional name field
+        }
+    });
 }
 
 export const login = (req, res) => {
@@ -56,12 +109,16 @@ export const login = (req, res) => {
     }
 
     // Simulate user authentication
-    const user = { id: 1, username: 'admin', password: 'admin123', email: 'admin@example.com', name: 'Admin User' }; // Replace with real user lookup
+    const user = findUserByUsername(username);
 
-    if (username === user.username && password === user.password) {
+    if (!user) {
+        return res.status(404).send('User not found');
+    }
+
+    if (password === user.password) {
         req.session.userId = user.id;
         req.session.email = user.email;
-        req.session.name = user.name || null; // Optional name field
+        req.session.name = user.name || user.username || null; // Optional name field
         return res.status(200).send(`Logged in as ${user.username}`);
     } else {
         return res.status(401).send('Invalid credentials');

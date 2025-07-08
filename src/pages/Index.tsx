@@ -218,19 +218,22 @@ const Index = () => {
                       Open App
                     </Button>
 
+                    
+                    
+                    
                     <Button 
-                      onClick={testAccountSelection}
-                      className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
+                      onClick={handleSSOLogin}
+                      className="w-full h-12 bg-black hover:bg-gray-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
                     >
                       <Shield className="h-4 w-4" />
-                      Test Account Selection
+                      Switch to SSO Account
                     </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Configuration Panel - only show when not logged in */}
+            {/* Configuration Panel  - only show when not logged in */}
             {!isLoggedIn && showConfig && (
               <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
                 <CardHeader>

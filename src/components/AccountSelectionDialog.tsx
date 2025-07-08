@@ -49,7 +49,7 @@ const AccountSelectionDialog = ({
               <span className="font-medium text-blue-900">SSO Account</span>
             </div>
             <div className="text-sm text-blue-800">
-              <div>Name: {ssoUser?.name || 'N/A'}</div>
+              <div>Name: {ssoUser?.preferred_username || 'N/A'}</div>
               <div>Email: {ssoUser?.email || 'N/A'}</div>
             </div>
           </div>
