@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, ExternalLink, Settings, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import AccountSelectionDialog from "@/components/AccountSelectionDialog";
+import LocalLoginForm from "@/components/LocalLoginForm";
 
 const Index = () => {
   const { isLoggedIn, userInfo, logout } = useAuth();
@@ -18,6 +19,7 @@ const Index = () => {
 
   const [showConfig, setShowConfig] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [showLocalLogin, setShowLocalLogin] = useState(false);
 
   const generateCodeChallenge = (codeVerifier: string) => {
     const encoder = new TextEncoder();
@@ -33,38 +35,9 @@ const Index = () => {
 
   const generateCodeVerifier = () => {
     const codeVerifier = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`; // Store for 1 hour
+    document.cookie = `code_verifier=${codeVerifier}; path=/; max-age=3600`;
     return codeVerifier;
   }
-
-  const handleSSOLogin = async () => {
-    const codeVerifier = generateCodeVerifier();
-    // Store config in localStorage for the callback page
-    localStorage.setItem('ssoConfig', JSON.stringify(ssoConfig));
-    const state = Math.random().toString(36).substring(7); // Simple state for demo
-    document.cookie = `state=${state}; path=/; max-age=3600`; // Store for 1 hour
-
-
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: ssoConfig.clientId,
-      redirect_uri: ssoConfig.redirectUri,
-      scope: ssoConfig.scope,
-      state: state,
-      code_challenge: await generateCodeChallenge(codeVerifier),
-      code_challenge_method: "S256",
-      nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) // Random nonce for demo
-    });
-
-    const ssoUrl = `${ssoConfig.ssoPortalUrl}/api/sso/authorize?${params.toString()}`;
-    console.log("Redirecting to SSO portal:", ssoUrl);
-    
-    // In a real implementation, you would redirect here
-    window.location.href = ssoUrl;
-    
-    // For demo purposes, we'll just log the URL
-    // alert(`Demo: Would redirect to:\n${ssoUrl}`);
-  };
 
   const handleLogout = () => {
     logout();
@@ -106,6 +79,37 @@ const Index = () => {
     console.log('User selected local account');
     setShowAccountDialog(false);
   };
+
+  const handleSSOLogin = async () => {
+    const codeVerifier = generateCodeVerifier();
+    localStorage.setItem('ssoConfig', JSON.stringify(ssoConfig));
+    const state = Math.random().toString(36).substring(7);
+    document.cookie = `state=${state}; path=/; max-age=3600`;
+
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: ssoConfig.clientId,
+      redirect_uri: ssoConfig.redirectUri,
+      scope: ssoConfig.scope,
+      state: state,
+      code_challenge: await generateCodeChallenge(codeVerifier),
+      code_challenge_method: "S256",
+      nonce: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    });
+
+    const ssoUrl = `${ssoConfig.ssoPortalUrl}/api/sso/authorize?${params.toString()}`;
+    console.log("Redirecting to SSO portal:", ssoUrl);
+    
+    window.location.href = ssoUrl;
+  };
+
+  if (showLocalLogin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+        <LocalLoginForm onCancel={() => setShowLocalLogin(false)} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -162,13 +166,13 @@ const Index = () => {
                 <CardDescription className="text-gray-600">
                   {isLoggedIn 
                     ? 'You are successfully authenticated'
-                    : 'Sign in securely using Single Sign-On'
+                    : 'Sign in securely using Single Sign-On or local account'
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isLoggedIn ? (
-                  <>
+                  <div className="space-y-3">
                     <Button 
                       onClick={handleSSOLogin}
                       className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 hover:shadow-lg gap-2"
@@ -177,10 +181,19 @@ const Index = () => {
                       Login with SSO
                     </Button>
                     
+                    <Button 
+                      onClick={() => setShowLocalLogin(true)}
+                      variant="outline"
+                      className="w-full h-12 font-medium transition-all duration-200 hover:shadow-lg gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      Login with Local Account
+                    </Button>
+                    
                     <div className="text-center text-sm text-gray-500">
                       Secure authentication powered by OAuth 2.0
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="bg-green-50 rounded-lg p-4">
@@ -195,8 +208,8 @@ const Index = () => {
                           <span className="text-green-900 font-mono">{userInfo?.user?.email || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-green-700">Token Type:</span>
-                          <span className="text-green-900 font-mono">{userInfo?.token_type || 'N/A'}</span>
+                          <span className="text-green-700">Method:</span>
+                          <span className="text-green-900 font-mono">{userInfo?.method || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
@@ -280,7 +293,7 @@ const Index = () => {
                 <div className="text-sm text-blue-800">
                   <strong>Demo Mode:</strong> {isLoggedIn 
                     ? 'You are now logged in. The access token exchange was simulated successfully.'
-                    : 'This client will generate OAuth URLs and log them to the console. In production, users would be redirected to your SSO portal for authentication.'
+                    : 'This client supports both SSO authentication and local account login. Use the demo credentials (admin/admin123) for local login testing.'
                   }
                 </div>
               </CardContent>
