@@ -45,7 +45,9 @@ const Index = () => {
   };
 
   const handlePushAuthRequest = async () => {
+    console.log("PAR userinfo: " + userInfo.access_token)
     const requesttoken = await fetch('https://localhost:8080/api/sso/par/request.token', {
+      
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,19 +68,19 @@ const Index = () => {
       window.location.href = requestTokenLink;
     }
 
-  const testAccountSelection = () => {
-    setShowAccountDialog(true);
-  };
+  // const testAccountSelection = () => {
+  //   setShowAccountDialog(true);
+  // };
 
-  const handleSelectSSO = () => {
-    console.log('User selected SSO account');
-    setShowAccountDialog(false);
-  };
+  // const handleSelectSSO = () => {
+  //   console.log('User selected SSO account');
+  //   setShowAccountDialog(false);
+  // };
 
-  const handleSelectLocal = () => {
-    console.log('User selected local account');
-    setShowAccountDialog(false);
-  };
+  // const handleSelectLocal = () => {
+  //   console.log('User selected local account');
+  //   setShowAccountDialog(false);
+  // };
 
   const handleSSOLogin = async () => {
     const codeVerifier = generateCodeVerifier();
@@ -301,7 +303,7 @@ const Index = () => {
         </div>
       </div>
 
-      <AccountSelectionDialog
+      {/* <AccountSelectionDialog
         open={showAccountDialog}
         onOpenChange={setShowAccountDialog}
         localUser={{
@@ -314,7 +316,7 @@ const Index = () => {
         }}
         onSelectLocal={handleSelectLocal}
         onSelectSSO={handleSelectSSO}
-      />
+      /> */}
     </>
   );
 };

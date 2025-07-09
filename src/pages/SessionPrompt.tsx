@@ -54,7 +54,7 @@ const SessionPrompt = () => {
     useEffect(() => {
         //create ssoUser
         const user = parseJwt(tokenData?.access_token) || null;
-
+        
         setUser(user);
     }, []);
 

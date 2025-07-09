@@ -35,6 +35,7 @@ export const handleOAuthCallback = (req, res) => {
     }
 
     if (currentUser === jwtUser.sub) {
+        
         return res.status(200).send({
             conflict: false,
             user: {
@@ -44,7 +45,7 @@ export const handleOAuthCallback = (req, res) => {
             }
         });
     }
-
+    // console.log(currentUser + " : " + jwtUser.sub);
 
 
     //If conflict between current user and JWT user, prompt for session select.

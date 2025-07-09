@@ -81,6 +81,7 @@ const LocalLoginForm = ({ onCancel }: LocalLoginFormProps) => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
               required
+              autoCapitalize="none"
             />
           </div>
           
@@ -93,6 +94,7 @@ const LocalLoginForm = ({ onCancel }: LocalLoginFormProps) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
+              autoCapitalize="none"
             />
           </div>
 

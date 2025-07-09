@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsLoggedIn(true);
           setUserInfo({
             user: {
-              name: decoded.preferred_username || decoded.sub || 'User',
+              name: decoded.preferred_username || 'User',
               email: decoded.email || 'N/A',
               
             },

@@ -95,7 +95,7 @@ const SSO = () => {
             
             const decoded = JSON.parse(jsonPayload);
             const ssoUser = {
-              name: decoded.sub || decoded.preferred_username || 'SSO User',
+              name: decoded.preferred_username || decoded.sub || 'SSO User',
               email: decoded.email || 'N/A'
             };
             
