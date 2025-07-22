@@ -1,19 +1,17 @@
 
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseJwt } from "@/lib/jwt";
-import { parse } from "path";
 
 const Callback = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, userInfo } = useAuth();
+  const { login } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing OAuth callback...');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -89,6 +87,7 @@ const Callback = () => {
       }
 
       // Make API request using proxy to avoid CORS issues
+      //TODO: move access token exchange to backend
       const tokenResponse = await fetch('https://localhost:8080/api/sso/token', {
         method: 'POST',
         headers: {

@@ -2,6 +2,43 @@ import {decodeJWT} from '../service/jwtService.js';
 import path from 'path';
 import { findUserByUsername } from '../models/userModel.js';
 
+export const handleTokenExchange = async (req, res) => {
+    const code = req.query.code;
+    const verifier = req.query.verifier;
+    const type = req.query.type || 'authorization_code'; // Default to 'authorization_code' if not provided
+    if (!code || !verifier) {
+        return res.status(400).send('Code and verifier are required');
+    }
+
+    //exchange code for token
+    const tokenResponse = await fetch('https://localhost:8080/api/sso/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: type,
+          code: code,
+          client_id: 'web-app-prod-client',
+          // redirect_uri: ssoConfig.redirectUri,
+          code_verifier: verifier,
+          nonce: Math.random().toString(36).substring(2, 15), // Generate a random nonce
+        }).toString()
+    });
+
+    if (!tokenResponse.ok) {
+        const error = await tokenResponse.text();
+        return res.status(tokenResponse.status).send(`Token exchange failed: ${error}`);
+    }
+    const tokenData = await tokenResponse.json();
+    const token = tokenData.access_token;
+
+    if (!token) {
+        return res.status(400).send('Token exchange failed: No access token received');}
+    
+    //Decode the JWT token and handle the user session
+    handleOAuthCallback(req, res, token);
+}
 
 export const handleOAuthCallback = (req, res) => {
     const token = req.query.token;

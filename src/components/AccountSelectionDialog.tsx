@@ -71,13 +71,13 @@ const AccountSelectionDialog = ({
             onClick={onSelectSSO}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Continue with SSO
+            Continue with SSO Account
           </AlertDialogAction>
           <AlertDialogCancel 
             onClick={onSelectLocal}
             className="bg-gray-600 hover:bg-gray-700 text-white"
           >
-            Continue with Local
+            Cancel
           </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
